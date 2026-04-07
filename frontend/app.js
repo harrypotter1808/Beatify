@@ -1,5 +1,5 @@
 let currentUser = null;
-const apiBase = 'http://localhost:4567/api';
+const apiBase = '/api';
 
 async function req(endpoint, method = 'GET', body = null) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };

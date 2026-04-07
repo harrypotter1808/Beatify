@@ -11,7 +11,13 @@ public class SpotifyServer {
     public static void main(String[] args) {
         loadData();
 
-        port(4567);
+        String portEnv = System.getenv("PORT");
+        if (portEnv != null) {
+            port(Integer.parseInt(portEnv));
+        } else {
+            port(4567);
+        }
+        
         staticFiles.externalLocation("frontend");
 
         after((req, res) -> {
