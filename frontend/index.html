@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySpotify</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="auth-view" class="view active">
+        <div class="glass-box init-box">
+            <h1>MySpotify</h1>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <div class="btn-group">
+                <button onclick="login()">Login</button>
+                <button onclick="register()">Register</button>
+            </div>
+            <p id="auth-msg"></p>
+        </div>
+    </div>
+
+    <div id="main-view" class="view">
+        <div class="sidebar glass-box">
+            <h2>MySpotify</h2>
+            <nav>
+                <ul>
+                    <li onclick="showLibrary()">Library</li>
+                    <li onclick="showPlaylists()">My Playlists</li>
+                </ul>
+            </nav>
+            <div class="user-info">
+                <span id="user-display"></span>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+        <div class="content glass-box">
+            <div id="library-section" class="section active">
+                <h3>Global Library</h3>
+                <div id="library-list" class="list-container"></div>
+            </div>
+            <div id="playlists-section" class="section">
+                <h3>My Playlists</h3>
+                <div class="add-playlist">
+                    <input type="text" id="new-playlist-name" placeholder="New Playlist Name" style="width: 250px;">
+                    <button onclick="createPlaylist()">Create</button>
+                </div>
+                <div id="playlists-list" class="list-container" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="player" class="player glass-box hidden">
+        <div class="player-info">
+            <h4 id="playing-title">Song Title</h4>
+            <p id="playing-artist">Artist - Album</p>
+        </div>
+        <div class="player-controls">
+            <button>⏮</button>
+            <button id="play-pause" onclick="togglePlay()">⏸</button>
+            <button>⏭</button>
+        </div>
+        <div class="player-time">
+            0:00 / <span id="playing-duration">0:00</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

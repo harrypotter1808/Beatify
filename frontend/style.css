@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+}
+
+.glass-box {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border-radius: 15px;
+}
+
+.view { display: none; width: 100vw; height: 100vh; }
+.view.active { display: flex; }
+
+.init-box {
+    margin: auto; padding: 40px; display: flex; flex-direction: column; gap: 15px; width: 350px; text-align: center;
+}
+.init-box h1 { margin-bottom: 20px; font-weight: 800; color: #1db954; font-size: 2.2rem;}
+input { padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; outline: none; }
+input:focus { border-color: #1db954; }
+button { padding: 10px 15px; border-radius: 8px; border: none; background: #1db954; color: white; cursor: pointer; font-weight: 600; transition: transform 0.2s, background 0.2s; }
+button:hover { background: #1ed760; transform: scale(1.05); }
+.btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 10px;}
+
+#auth-msg { color: #ff5555; font-size: 0.9em; height: 20px; }
+
+.sidebar { width: 250px; margin: 20px; display: flex; flex-direction: column; padding: 25px; }
+.sidebar h2 { color: #1db954; margin-bottom: 30px; font-weight: 800;}
+.sidebar nav ul { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+.sidebar nav ul li { cursor: pointer; padding: 12px; border-radius: 8px; font-weight: 600; color: #b3b3b3; transition: background 0.3s, color 0.3s; }
+.sidebar nav ul li:hover { background: rgba(255,255,255,0.1); color: #fff;}
+.user-info { margin-top: auto; display: flex; flex-direction: column; gap: 15px; }
+.user-info span { font-weight: 600; color: #b3b3b3; font-size: 0.9rem;}
+
+.content { flex-grow: 1; margin: 20px 20px 20px 0; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
+.section { display: none; flex-grow: 1; }
+.section.active { display: flex; flex-direction: column; }
+.section h3 { font-size: 2.5em; margin-bottom: 25px; font-weight: 800;}
+
+.add-playlist { display: flex; gap: 10px; }
+
+.list-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; padding-bottom: 120px; }
+.song-card { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(0,0,0,0.2); border-radius: 10px; transition: background 0.2s; }
+.song-card:hover { background: rgba(255,255,255,0.15); }
+.song-info h4 { font-size: 1.1em; margin-bottom: 5px; }
+.song-info p { color: #a0a0a0; font-size: 0.9em; }
+
+.player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 800px; max-width: 90vw; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; transition: bottom 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+.player.hidden { bottom: -120px; }
+.player-info { width: 30%; }
+.player-info h4 { font-size: 1.1em; margin-bottom: 4px;}
+.player-info p { font-size: 0.85em; color: #b3b3b3;}
+.player-controls { display: flex; gap: 20px; align-items: center; justify-content: center; width: 40%;}
+.player-controls button { background: none; font-size: 1.5em; border-radius: 50%; width: 50px; height: 50px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.player-controls button:hover { background: rgba(255,255,255,0.1); transform: scale(1.1); }
+.player-time { width: 30%; text-align: right; color: #b3b3b3; font-size: 0.9em;}
+.add-song-select { background: rgba(0,0,0,0.4); color: white; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); outline: none; margin-left: 10px; cursor: pointer; transition: border-color 0.3s;}
+.add-song-select:focus { border-color: #1db954; }
+
+html::-webkit-scrollbar, .content::-webkit-scrollbar { width: 8px; }
+html::-webkit-scrollbar-track, .content::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb, .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
