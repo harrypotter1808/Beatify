@@ -20,9 +20,26 @@ public class DatabaseManager {
             String envUrl = System.getenv("DATABASE_URL");
             if (envUrl != null && !envUrl.trim().isEmpty()) {
                 if (envUrl.startsWith("mysql://")) {
-                    // Convert mysql:// to jdbc:mysql:// and extract credentials if needed
-                    // Simple prepend if it's already structured, or let it fall back
-                    dbUrl = "jdbc:" + envUrl;
+                    try {
+                        String cleanUrl = envUrl.substring(8); // remove mysql://
+                        String[] authAndHost = cleanUrl.split("@");
+                        if (authAndHost.length == 2) {
+                            String[] auth = authAndHost[0].split(":");
+                            String userPart = auth[0];
+                            String passPart = auth.length > 1 ? auth[1] : "";
+                            
+                            String[] hostAndDb = authAndHost[1].split("/");
+                            String hostPort = hostAndDb[0];
+                            String dbPart = hostAndDb.length > 1 ? hostAndDb[1] : "";
+                            
+                            dbUrl = "jdbc:mysql://" + hostPort + "/" + dbPart + "?user=" + userPart + "&password=" + passPart;
+                        } else {
+                            dbUrl = "jdbc:" + envUrl;
+                        }
+                    } catch (Exception ex) {
+                        System.out.println("Failed to parse DATABASE_URL: " + ex.getMessage());
+                        dbUrl = "jdbc:" + envUrl;
+                    }
                 } else {
                     dbUrl = envUrl;
                 }
