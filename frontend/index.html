@@ -221,6 +221,15 @@
                                 <label for="admin-song-genre">Genre</label>
                                 <input type="text" id="admin-song-genre" placeholder="e.g. Pop">
                             </div>
+                            <div class="input-field">
+                                <label for="admin-song-file">Upload Audio File (from device)</label>
+                                <input type="file" id="admin-song-file" accept="audio/*" style="padding: 6px 0; border: none; background: transparent; color: var(--text-gray);">
+                            </div>
+                            <div style="text-align: center; font-size: 0.8rem; color: var(--text-muted); margin: -5px 0 10px 0;">-- OR --</div>
+                            <div class="input-field">
+                                <label for="admin-song-url">Audio Link URL (e.g. cloud stream)</label>
+                                <input type="text" id="admin-song-url" placeholder="e.g. https://mycloud.com/song.mp3">
+                            </div>
                             <div class="btn-group">
                                 <button class="accent-btn" id="admin-submit-btn" onclick="submitAdminSong()">Add Song</button>
                                 <button class="secondary-btn" id="admin-cancel-btn" style="display: none;" onclick="resetAdminForm()">Cancel Edit</button>

@@ -436,28 +436,48 @@ async function submitAdminSong() {
     const artistInput = document.getElementById('admin-song-artist');
     const durInput = document.getElementById('admin-song-duration');
     const genreInput = document.getElementById('admin-song-genre');
+    const urlInput = document.getElementById('admin-song-url');
+    const fileInput = document.getElementById('admin-song-file');
     const isEdit = document.getElementById('admin-song-is-edit').value === 'true';
 
     const title = titleInput.value.trim();
     const artist = artistInput.value.trim();
     const duration = durInput.value.trim();
     const genre = genreInput.value.trim();
+    const url = urlInput.value.trim();
+    const file = fileInput.files[0];
 
     if (!title || !artist || !duration || !genre) {
         alert('All fields are required');
         return;
     }
 
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('artist', artist);
+    formData.append('duration', duration);
+    formData.append('genre', genre);
+    if (url) formData.append('url', url);
+    if (file) formData.append('file', file);
+
+    const method = isEdit ? 'PUT' : 'POST';
+
     try {
-        if (isEdit) {
-            // Edit mode calls PUT endpoint
-            await apiRequest('/songs', 'PUT', { title, artist, duration, genre });
-            alert(`Song "${title}" updated successfully!`);
-        } else {
-            // Add mode calls POST endpoint
-            await apiRequest('/songs', 'POST', { title, artist, duration, genre });
-            alert(`Song "${title}" added successfully!`);
+        const response = await fetch(apiBase + '/songs', {
+            method,
+            body: formData
+        });
+
+        if (!response.ok) {
+            let errMsg = 'Server error';
+            try {
+                const errData = await response.json();
+                errMsg = errData.error || errMsg;
+            } catch(e) {}
+            throw new Error(errMsg);
         }
+
+        alert(isEdit ? `Song "${title}" updated successfully!` : `Song "${title}" added successfully!`);
         resetAdminForm();
         loadAdminCatalog();
     } catch (err) {
@@ -471,6 +491,8 @@ function editAdminSong(title, artist, duration, genre) {
     document.getElementById('admin-song-artist').value = artist;
     document.getElementById('admin-song-duration').value = duration;
     document.getElementById('admin-song-genre').value = genre;
+    document.getElementById('admin-song-url').value = ''; // Reset for edit
+    document.getElementById('admin-song-file').value = '';
     
     document.getElementById('admin-song-is-edit').value = 'true';
     document.getElementById('form-action-title').innerText = 'Edit Song';
@@ -484,6 +506,8 @@ function resetAdminForm() {
     document.getElementById('admin-song-artist').value = '';
     document.getElementById('admin-song-duration').value = '';
     document.getElementById('admin-song-genre').value = '';
+    document.getElementById('admin-song-url').value = '';
+    document.getElementById('admin-song-file').value = '';
     
     document.getElementById('admin-song-is-edit').value = 'false';
     document.getElementById('form-action-title').innerText = 'Add New Song';

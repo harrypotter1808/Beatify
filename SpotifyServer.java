@@ -2,6 +2,9 @@ import static spark.Spark.*;
 import com.google.gson.Gson;
 import java.sql.*;
 import java.util.*;
+import java.io.*;
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.http.Part;
 import com.Admin.Admin;
 
 public class SpotifyServer {
@@ -25,6 +28,14 @@ public class SpotifyServer {
         }
         
         staticFiles.externalLocation("frontend");
+
+        // Enable multipart config for SparkJava upload route
+        before("/api/songs", (req, res) -> {
+            if (req.raw().getContentType() != null && req.raw().getContentType().startsWith("multipart/form-data")) {
+                req.raw().setAttribute("org.eclipse.jetty.multipartConfig", 
+                    new MultipartConfigElement(System.getProperty("java.io.tmpdir")));
+            }
+        });
 
         // CORS Headers
         after((req, res) -> {
@@ -52,13 +63,16 @@ public class SpotifyServer {
             List<Map<String, Object>> songs = new ArrayList<>();
             try (Connection conn = DatabaseManager.getConnection();
                  Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT title, artist, duration, genere FROM song")) {
+                 ResultSet rs = stmt.executeQuery(
+                     "SELECT s.title, s.artist, s.duration, s.genere, sf.file_path " +
+                     "FROM song s LEFT JOIN song_file sf ON s.title = sf.title")) {
                 while (rs.next()) {
                     songs.add(mapSong(
                         rs.getString("title"),
                         rs.getString("artist"),
                         rs.getDouble("duration"),
-                        rs.getString("genere")
+                        rs.getString("genere"),
+                        rs.getString("file_path")
                     ));
                 }
             } catch (SQLException e) {
@@ -166,28 +180,88 @@ public class SpotifyServer {
             return "{\"error\":\"Invalid Admin credentials\"}";
         });
 
-        // 5. Admin Add Song
+        // 5. Admin Add Song (Supports JSON and Multi-part file upload)
         post("/api/songs", (req, res) -> {
             res.type("application/json");
-            Map<String, Object> body = gson.fromJson(req.body(), Map.class);
-            String title = (String) body.get("title");
-            String artist = (String) body.get("artist");
-            Double duration = body.get("duration") != null ? Double.parseDouble(body.get("duration").toString()) : 0.0;
-            String genre = (String) body.get("genre");
+            String title = null;
+            String artist = null;
+            double duration = 0.0;
+            String genre = null;
+            String filePath = null;
+
+            if (req.raw().getContentType() != null && req.raw().getContentType().startsWith("multipart/form-data")) {
+                title = req.raw().getParameter("title");
+                artist = req.raw().getParameter("artist");
+                String durStr = req.raw().getParameter("duration");
+                if (durStr != null) duration = Double.parseDouble(durStr);
+                genre = req.raw().getParameter("genre");
+                String url = req.raw().getParameter("url");
+
+                if (url != null && !url.trim().isEmpty()) {
+                    filePath = url.trim();
+                }
+
+                // Handle File Upload if selected
+                try {
+                    Part filePart = req.raw().getPart("file");
+                    if (filePart != null && filePart.getSize() > 0) {
+                        String originalName = filePart.getSubmittedFileName();
+                        if (originalName != null && !originalName.trim().isEmpty()) {
+                            String cleanName = System.currentTimeMillis() + "_" + originalName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+                            File uploadsDir = new File("frontend/music");
+                            if (!uploadsDir.exists()) uploadsDir.mkdirs();
+                            File destFile = new File(uploadsDir, cleanName);
+                            try (InputStream input = filePart.getInputStream();
+                                 OutputStream output = new FileOutputStream(destFile)) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead;
+                                while ((bytesRead = input.read(buffer)) != -1) {
+                                    output.write(buffer, 0, bytesRead);
+                                }
+                            }
+                            filePath = "/music/" + cleanName;
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("File upload bypass: " + e.getMessage());
+                }
+            } else {
+                Map<String, Object> body = gson.fromJson(req.body(), Map.class);
+                title = (String) body.get("title");
+                artist = (String) body.get("artist");
+                duration = body.get("duration") != null ? Double.parseDouble(body.get("duration").toString()) : 0.0;
+                genre = (String) body.get("genre");
+                String url = (String) body.get("url");
+                if (url != null && !url.trim().isEmpty()) {
+                    filePath = url.trim();
+                }
+            }
 
             if (title == null || artist == null) {
                 res.status(400);
                 return "{\"error\":\"Title and Artist are required\"}";
             }
 
-            try (Connection conn = DatabaseManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO song VALUES(?, ?, ?, ?)")) {
-                pstmt.setString(1, title);
-                pstmt.setString(2, artist);
-                pstmt.setDouble(3, duration);
-                pstmt.setString(4, genre);
-                pstmt.executeUpdate();
-                return gson.toJson(mapSong(title, artist, duration, genre));
+            try (Connection conn = DatabaseManager.getConnection()) {
+                // Insert into song
+                try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO song VALUES(?, ?, ?, ?)")) {
+                    pstmt.setString(1, title);
+                    pstmt.setString(2, artist);
+                    pstmt.setDouble(3, duration);
+                    pstmt.setString(4, genre);
+                    pstmt.executeUpdate();
+                }
+
+                // Insert into song_file
+                if (filePath != null) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO song_file VALUES(?, ?)")) {
+                        pstmt.setString(1, title);
+                        pstmt.setString(2, filePath);
+                        pstmt.executeUpdate();
+                    }
+                }
+
+                return gson.toJson(mapSong(title, artist, duration, genre, filePath));
             } catch (SQLException e) {
                 res.status(500);
                 return "{\"error\":\"" + e.getMessage() + "\"}";
@@ -197,11 +271,57 @@ public class SpotifyServer {
         // 6. Admin Update Song
         put("/api/songs", (req, res) -> {
             res.type("application/json");
-            Map<String, Object> body = gson.fromJson(req.body(), Map.class);
-            String title = (String) body.get("title");
-            String artist = (String) body.get("artist");
-            Double duration = body.get("duration") != null ? Double.parseDouble(body.get("duration").toString()) : null;
-            String genre = (String) body.get("genre");
+            String title = null;
+            String artist = null;
+            Double duration = null;
+            String genre = null;
+            String filePath = null;
+
+            if (req.raw().getContentType() != null && req.raw().getContentType().startsWith("multipart/form-data")) {
+                title = req.raw().getParameter("title");
+                artist = req.raw().getParameter("artist");
+                String durStr = req.raw().getParameter("duration");
+                if (durStr != null) duration = Double.parseDouble(durStr);
+                genre = req.raw().getParameter("genre");
+                String url = req.raw().getParameter("url");
+                if (url != null && !url.trim().isEmpty()) {
+                    filePath = url.trim();
+                }
+
+                try {
+                    Part filePart = req.raw().getPart("file");
+                    if (filePart != null && filePart.getSize() > 0) {
+                        String originalName = filePart.getSubmittedFileName();
+                        if (originalName != null && !originalName.trim().isEmpty()) {
+                            String cleanName = System.currentTimeMillis() + "_" + originalName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+                            File uploadsDir = new File("frontend/music");
+                            if (!uploadsDir.exists()) uploadsDir.mkdirs();
+                            File destFile = new File(uploadsDir, cleanName);
+                            try (InputStream input = filePart.getInputStream();
+                                 OutputStream output = new FileOutputStream(destFile)) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead;
+                                while ((bytesRead = input.read(buffer)) != -1) {
+                                    output.write(buffer, 0, bytesRead);
+                                }
+                            }
+                            filePath = "/music/" + cleanName;
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("File upload bypass: " + e.getMessage());
+                }
+            } else {
+                Map<String, Object> body = gson.fromJson(req.body(), Map.class);
+                title = (String) body.get("title");
+                artist = (String) body.get("artist");
+                duration = body.get("duration") != null ? Double.parseDouble(body.get("duration").toString()) : null;
+                genre = (String) body.get("genre");
+                String url = (String) body.get("url");
+                if (url != null && !url.trim().isEmpty()) {
+                    filePath = url.trim();
+                }
+            }
 
             if (title == null) {
                 res.status(400);
@@ -209,7 +329,6 @@ public class SpotifyServer {
             }
 
             try (Connection conn = DatabaseManager.getConnection()) {
-                // Fetch existing details
                 String existingArtist = "";
                 double existingDuration = 0.0;
                 String existingGenre = "";
@@ -227,7 +346,7 @@ public class SpotifyServer {
                     }
                 }
 
-                // Update
+                // Update song
                 try (PreparedStatement upd = conn.prepareStatement(
                         "UPDATE song SET artist = ?, duration = ?, genere = ? WHERE title = ?")) {
                     upd.setString(1, artist != null ? artist : existingArtist);
@@ -237,11 +356,36 @@ public class SpotifyServer {
                     upd.executeUpdate();
                 }
 
+                // Update song_file
+                if (filePath != null) {
+                    try {
+                        try (PreparedStatement pstmt = conn.prepareStatement(
+                                "INSERT INTO song_file VALUES(?, ?) ON DUPLICATE KEY UPDATE file_path = ?")) {
+                            pstmt.setString(1, title);
+                            pstmt.setString(2, filePath);
+                            pstmt.setString(3, filePath);
+                            pstmt.executeUpdate();
+                        }
+                    } catch (Exception e) {
+                        // Standard delete/insert fallback
+                        try (PreparedStatement pstmtDel = conn.prepareStatement("DELETE FROM song_file WHERE title = ?")) {
+                            pstmtDel.setString(1, title);
+                            pstmtDel.executeUpdate();
+                        }
+                        try (PreparedStatement pstmtIns = conn.prepareStatement("INSERT INTO song_file VALUES(?, ?)")) {
+                            pstmtIns.setString(1, title);
+                            pstmtIns.setString(2, filePath);
+                            pstmtIns.executeUpdate();
+                        }
+                    }
+                }
+
                 return gson.toJson(mapSong(
                     title,
                     artist != null ? artist : existingArtist,
                     duration != null ? duration : existingDuration,
-                    genre != null ? genre : existingGenre
+                    genre != null ? genre : existingGenre,
+                    filePath
                 ));
             } catch (SQLException e) {
                 res.status(500);
@@ -258,6 +402,11 @@ public class SpotifyServer {
                 try (PreparedStatement delP = conn.prepareStatement("DELETE FROM playlist WHERE song_title = ?")) {
                     delP.setString(1, title);
                     delP.executeUpdate();
+                }
+                // Delete from song_file
+                try (PreparedStatement delSF = conn.prepareStatement("DELETE FROM song_file WHERE title = ?")) {
+                    delSF.setString(1, title);
+                    delSF.executeUpdate();
                 }
                 // Delete from song table
                 try (PreparedStatement delS = conn.prepareStatement("DELETE FROM song WHERE title = ?")) {
@@ -286,7 +435,7 @@ public class SpotifyServer {
             return gson.toJson(getUserPlaylistsList(username));
         });
 
-        // 9. Create Playlist (Inserts a placeholder row)
+        // 9. Create Playlist
         post("/api/playlists", (req, res) -> {
             res.type("application/json");
             Map<String, String> body = gson.fromJson(req.body(), Map.class);
@@ -299,7 +448,6 @@ public class SpotifyServer {
             }
 
             try (Connection conn = DatabaseManager.getConnection()) {
-                // Insert placeholder row for empty playlist
                 try (PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO playlist (playlist_name, username, song_title) VALUES (?, ?, '')")) {
                     pstmt.setString(1, playlistName);
@@ -330,7 +478,6 @@ public class SpotifyServer {
             }
 
             try (Connection conn = DatabaseManager.getConnection()) {
-                // Check if song exists
                 boolean exists = false;
                 try (PreparedStatement chk = conn.prepareStatement("SELECT 1 FROM song WHERE title = ?")) {
                     chk.setString(1, songTitle);
@@ -343,7 +490,6 @@ public class SpotifyServer {
                     return "{\"error\":\"Song does not exist in library\"}";
                 }
 
-                // Add song to playlist
                 try (PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO playlist (playlist_name, username, song_title) VALUES (?, ?, ?)")) {
                     pstmt.setString(1, playlistName);
@@ -352,7 +498,6 @@ public class SpotifyServer {
                     pstmt.executeUpdate();
                 }
 
-                // Remove the empty placeholder if exists
                 try (PreparedStatement clean = conn.prepareStatement(
                         "DELETE FROM playlist WHERE playlist_name = ? AND username = ? AND (song_title = '' OR song_title IS NULL)")) {
                     clean.setString(1, playlistName);
@@ -388,7 +533,6 @@ public class SpotifyServer {
                 pstmt.setString(3, songTitle);
                 int count = pstmt.executeUpdate();
                 
-                // If playlist is now empty, add a placeholder row so it isn't completely deleted
                 boolean hasSongs = false;
                 try (PreparedStatement chk = conn.prepareStatement(
                         "SELECT 1 FROM playlist WHERE playlist_name = ? AND username = ?")) {
@@ -446,11 +590,11 @@ public class SpotifyServer {
             }
         });
 
-        System.out.println("Spotify Web Server started on http://localhost:4567");
+        System.out.println("Spotify Web Server started on port " + portEnv);
     }
 
     // Helper: Map table properties to a clean Song representation matching what the frontend expects
-    private static Map<String, Object> mapSong(String title, String artist, double duration, String genre) {
+    private static Map<String, Object> mapSong(String title, String artist, double duration, String genre, String customPath) {
         Map<String, Object> map = new HashMap<>();
         map.put("title", title);
         map.put("artist", artist);
@@ -483,8 +627,12 @@ public class SpotifyServer {
         map.put("genre", genre);
         map.put("durationInSeconds", (int) duration);
         
-        // Set filePath (if Blinding Lights, use song1.mp3, otherwise fallback to song1.mp3 since it's our only audio asset)
-        map.put("filePath", "/music/song1.mp3");
+        // Set filePath (custom path if exists, otherwise fallback to song1.mp3)
+        if (customPath != null && !customPath.trim().isEmpty()) {
+            map.put("filePath", customPath.trim());
+        } else {
+            map.put("filePath", "/music/song1.mp3");
+        }
         return map;
     }
 
@@ -505,9 +653,10 @@ public class SpotifyServer {
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT p.playlist_name, p.song_title, s.artist, s.duration, s.genere " +
+                "SELECT p.playlist_name, p.song_title, s.artist, s.duration, s.genere, sf.file_path " +
                 "FROM playlist p " +
                 "LEFT JOIN song s ON p.song_title = s.title " +
+                "LEFT JOIN song_file sf ON s.title = sf.title " +
                 "WHERE p.username = ?")) {
             pstmt.setString(1, username);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -525,7 +674,8 @@ public class SpotifyServer {
                             sTitle,
                             rs.getString("artist") != null ? rs.getString("artist") : "Unknown Artist",
                             rs.getDouble("duration"),
-                            rs.getString("genere") != null ? rs.getString("genere") : "Unknown Genre"
+                            rs.getString("genere") != null ? rs.getString("genere") : "Unknown Genre",
+                            rs.getString("file_path")
                         ));
                     }
                 }

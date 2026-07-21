@@ -61,6 +61,7 @@ public class DatabaseManager {
             // Drop existing tables to resolve schema differences (e.g. 'genre' vs 'genere')
             try {
                 stmt.execute("DROP TABLE IF EXISTS playlist");
+                stmt.execute("DROP TABLE IF EXISTS song_file");
                 stmt.execute("DROP TABLE IF EXISTS song");
                 stmt.execute("DROP TABLE IF EXISTS user");
                 System.out.println("Cleaned up old database tables.");
@@ -82,6 +83,11 @@ public class DatabaseManager {
                     "artist VARCHAR(255), " +
                     "duration DOUBLE, " +
                     "genere VARCHAR(255))");
+
+            // Create song_file table for storing custom audio files/URLs
+            stmt.execute("CREATE TABLE IF NOT EXISTS song_file (" +
+                    "title VARCHAR(255) PRIMARY KEY, " +
+                    "file_path VARCHAR(1000))");
 
             // Create playlist table
             stmt.execute("CREATE TABLE IF NOT EXISTS playlist (" +
