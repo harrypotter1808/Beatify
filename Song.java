@@ -6,13 +6,15 @@ public class Song implements Serializable {
     private String album;
     private String genre;
     private int durationInSeconds;
+    private String filePath;
 
-    public Song(String title, String artist, String album, String genre, int durationInSeconds) {
+    public Song(String title, String artist, String album, String genre, int durationInSeconds, String filePath) {
         this.title = title;
         this.artist = artist;
         this.album = album;
         this.genre = genre;
         this.durationInSeconds = durationInSeconds;
+        this.filePath = filePath;
     }
 
     public String getTitle() { return title; }
@@ -20,6 +22,7 @@ public class Song implements Serializable {
     public String getAlbum() { return album; }
     public String getGenre() { return genre; }
     public int getDurationInSeconds() { return durationInSeconds; }
+    public String getFilePath() { return filePath; }
 
     public String getFormattedDuration() {
         int minutes = durationInSeconds / 60;

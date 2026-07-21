@@ -10,16 +10,16 @@ public class MusicLibrary {
     }
 
     private void populateLibrary() {
-        library.add(new Song("Blinding Lights", "The Weeknd", "After Hours", "Pop", 200));
-        library.add(new Song("Shape of You", "Ed Sheeran", "Divide", "Pop", 233));
-        library.add(new Song("Bohemian Rhapsody", "Queen", "A Night at the Opera", "Rock", 354));
-        library.add(new Song("Stairway to Heaven", "Led Zeppelin", "Led Zeppelin IV", "Rock", 482));
-        library.add(new Song("Levitating", "Dua Lipa", "Future Nostalgia", "Pop", 203));
-        library.add(new Song("Hotel California", "Eagles", "Hotel California", "Rock", 390));
-        library.add(new Song("Take Five", "Dave Brubeck", "Time Out", "Jazz", 324));
-        library.add(new Song("So What", "Miles Davis", "Kind of Blue", "Jazz", 562));
-        library.add(new Song("Cruel Summer", "Taylor Swift", "Lover", "Pop", 178));
-        library.add(new Song("Smells Like Teen Spirit", "Nirvana", "Nevermind", "Rock", 301));
+        library.add(new Song("Blinding Lights", "The Weeknd", "After Hours", "Pop", 200, "/music/song1.mp3"));
+        library.add(new Song("Shape of You", "Ed Sheeran", "Divide", "Pop", 233, "/music/song2.mp3"));
+        library.add(new Song("Bohemian Rhapsody", "Queen", "A Night at the Opera", "Rock", 354, "/music/song3.mp3"));
+        library.add(new Song("Stairway to Heaven", "Led Zeppelin", "Led Zeppelin IV", "Rock", 482, "/music/song4.mp3"));
+        library.add(new Song("Levitating", "Dua Lipa", "Future Nostalgia", "Pop", 203, "/music/song5.mp3"));
+        library.add(new Song("Hotel California", "Eagles", "Hotel California", "Rock", 390, "/music/song6.mp3"));
+        library.add(new Song("Take Five", "Dave Brubeck", "Time Out", "Jazz", 324, "/music/song7.mp3"));
+        library.add(new Song("So What", "Miles Davis", "Kind of Blue", "Jazz", 562, "/music/song8.mp3"));
+        library.add(new Song("Cruel Summer", "Taylor Swift", "Lover", "Pop", 178, "/music/song9.mp3"));
+        library.add(new Song("Smells Like Teen Spirit", "Nirvana", "Nevermind", "Rock", 301, "/music/song10.mp3"));
     }
 
     public List<Song> getLibrary() {

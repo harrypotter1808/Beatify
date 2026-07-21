@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: spotify-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: harry2004
+      MYSQL_DATABASE: spotify
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: always
+
+  web:
+    build: .
+    container_name: spotify-web
+    ports:
+      - "4567:4567"
+    environment:
+      - PORT=4567
+      - DATABASE_URL=jdbc:mysql://mysql:3306/spotify?user=root&password=harry2004
+    depends_on:
+      - mysql
+    restart: always
+
+volumes:
+  mysql-data:

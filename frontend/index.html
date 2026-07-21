@@ -3,68 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySpotify</title>
+    <title>MySpotify - Music for Everyone</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- Background decorative blur shapes -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <!-- Auth View Container -->
     <div id="auth-view" class="view active">
-        <div class="glass-box init-box">
-            <h1>MySpotify</h1>
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <div class="btn-group">
-                <button onclick="login()">Login</button>
-                <button onclick="register()">Register</button>
+        <div class="glass-box auth-card">
+            <div class="brand">
+                <span class="spotify-icon">💚</span>
+                <h1>MySpotify</h1>
             </div>
+            
+            <!-- Auth Tab Switchers -->
+            <div class="auth-tabs">
+                <button id="tab-login-btn" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+                <button id="tab-register-btn" class="auth-tab" onclick="switchAuthTab('register')">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form-wrapper" class="auth-form-wrapper active">
+                <p class="auth-subtitle">Welcome back! Please sign in to your account.</p>
+                <div class="input-field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username">
+                </div>
+                <div class="input-field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password">
+                </div>
+                <button class="primary-btn" onclick="login()">Sign In</button>
+                
+                <div class="divider-text">OR</div>
+                <button class="secondary-btn" onclick="switchToAdminLogin()">Login as Administrator</button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form-wrapper" class="auth-form-wrapper">
+                <p class="auth-subtitle">Create an account to start listening.</p>
+                <div class="input-field">
+                    <label for="reg-username">Username *</label>
+                    <input type="text" id="reg-username" placeholder="Username (used to login)">
+                </div>
+                <div class="input-field">
+                    <label for="reg-email">Email Address</label>
+                    <input type="email" id="reg-email" placeholder="email@example.com">
+                </div>
+                <div class="input-field">
+                    <label for="reg-password">Password *</label>
+                    <input type="password" id="reg-password" placeholder="Min. 6 characters">
+                </div>
+                <div class="input-field">
+                    <label for="reg-mobile">Mobile Number</label>
+                    <input type="tel" id="reg-mobile" placeholder="e.g. +91 9876543210">
+                </div>
+                <div class="input-field">
+                    <label for="reg-location">Location</label>
+                    <input type="text" id="reg-location" placeholder="e.g. Mumbai, India">
+                </div>
+                <button class="primary-btn" onclick="register()">Create Account</button>
+            </div>
+
+            <!-- Admin Login Form -->
+            <div id="admin-form-wrapper" class="auth-form-wrapper">
+                <p class="auth-subtitle">Administrative Secure Portal</p>
+                <div class="input-field">
+                    <label for="admin-username">Admin Username</label>
+                    <input type="text" id="admin-username" placeholder="Enter admin username">
+                </div>
+                <div class="input-field">
+                    <label for="admin-password">Admin Password</label>
+                    <input type="password" id="admin-password" placeholder="Enter admin password">
+                </div>
+                <div class="btn-group">
+                    <button class="primary-btn" onclick="adminLogin()">Admin Login</button>
+                    <button class="text-btn" onclick="switchAuthTab('login')">← Back to User Login</button>
+                </div>
+            </div>
+
             <p id="auth-msg"></p>
         </div>
     </div>
 
+    <!-- Main Workspace View (Dashboard) -->
     <div id="main-view" class="view">
-        <div class="sidebar glass-box">
-            <h2>MySpotify</h2>
-            <nav>
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-box">
+            <div class="sidebar-brand">
+                <span class="logo-icon">💚</span>
+                <h2>MySpotify</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
                 <ul>
-                    <li onclick="showLibrary()">Library</li>
-                    <li onclick="showPlaylists()">My Playlists</li>
+                    <li id="nav-library" class="active" onclick="switchSection('library')">
+                        <span class="nav-icon">🏠</span> Home Library
+                    </li>
+                    <li id="nav-playlists" onclick="switchSection('playlists')">
+                        <span class="nav-icon">💿</span> My Playlists
+                    </li>
+                    <li id="nav-admin" class="admin-only" style="display: none;" onclick="switchSection('admin')">
+                        <span class="nav-icon">⚙️</span> Admin Portal
+                    </li>
                 </ul>
             </nav>
-            <div class="user-info">
-                <span id="user-display"></span>
-                <button onclick="logout()">Logout</button>
-            </div>
-        </div>
-        <div class="content glass-box">
-            <div id="library-section" class="section active">
-                <h3>Global Library</h3>
-                <div id="library-list" class="list-container"></div>
-            </div>
-            <div id="playlists-section" class="section">
-                <h3>My Playlists</h3>
-                <div class="add-playlist">
-                    <input type="text" id="new-playlist-name" placeholder="New Playlist Name" style="width: 250px;">
-                    <button onclick="createPlaylist()">Create</button>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="avatar-icon">👤</div>
+                    <div class="profile-details">
+                        <h4 id="user-display">Guest User</h4>
+                        <span id="user-badge">Free User</span>
+                    </div>
                 </div>
-                <div id="playlists-list" class="list-container" style="margin-top: 15px;"></div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            
+            <!-- Top Nav Bar -->
+            <header class="top-bar glass-box">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="Search songs, artists, or genres..." oninput="handleSearch()">
+                </div>
+                
+                <div class="top-profile">
+                    <span id="user-meta" class="location-badge">📍 Local</span>
+                </div>
+            </header>
+
+            <!-- Content Sections -->
+            <div class="scroll-content">
+                
+                <!-- Library Section -->
+                <section id="library-section" class="content-section active">
+                    <div class="section-header">
+                        <div>
+                            <h2>Global Library</h2>
+                            <p class="section-desc">Explore tracks in our community database</p>
+                        </div>
+                        <div class="duration-filter">
+                            <label for="duration-slider">Max Duration: <span id="duration-val">500</span>s</label>
+                            <input type="range" id="duration-slider" min="60" max="600" value="500" step="10" oninput="handleDurationFilter(this.value)">
+                        </div>
+                    </div>
+                    
+                    <!-- Songs Grid -->
+                    <div id="library-list" class="songs-grid">
+                        <!-- Song cards injected here -->
+                    </div>
+                </section>
+
+                <!-- Playlists Section -->
+                <section id="playlists-section" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h2>My Playlists</h2>
+                            <p class="section-desc">Manage your personalized soundscapes</p>
+                        </div>
+                    </div>
+
+                    <div class="playlist-creator glass-box">
+                        <h3>Create New Playlist</h3>
+                        <div class="input-row">
+                            <input type="text" id="new-playlist-name" placeholder="Playlist title (e.g. Chill Beats)">
+                            <button class="accent-btn" onclick="createPlaylist()">Create</button>
+                        </div>
+                    </div>
+
+                    <!-- Playlists Grid -->
+                    <div id="playlists-list" class="playlists-container">
+                        <!-- Playlists injected here -->
+                    </div>
+                </section>
+
+                <!-- Admin Section -->
+                <section id="admin-section" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h2>Admin Control Panel</h2>
+                            <p class="section-desc">Add, edit, and remove tracks in the global music catalog</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-grid">
+                        <!-- Song Adder Form -->
+                        <div class="admin-form glass-box">
+                            <h3 id="form-action-title">Add New Song</h3>
+                            <input type="hidden" id="admin-song-is-edit" value="false">
+                            <div class="input-field">
+                                <label for="admin-song-title">Song Title</label>
+                                <input type="text" id="admin-song-title" placeholder="e.g. Blinding Lights">
+                            </div>
+                            <div class="input-field">
+                                <label for="admin-song-artist">Artist</label>
+                                <input type="text" id="admin-song-artist" placeholder="e.g. The Weeknd">
+                            </div>
+                            <div class="input-field">
+                                <label for="admin-song-duration">Duration (seconds)</label>
+                                <input type="number" id="admin-song-duration" placeholder="e.g. 200">
+                            </div>
+                            <div class="input-field">
+                                <label for="admin-song-genre">Genre</label>
+                                <input type="text" id="admin-song-genre" placeholder="e.g. Pop">
+                            </div>
+                            <div class="btn-group">
+                                <button class="accent-btn" id="admin-submit-btn" onclick="submitAdminSong()">Add Song</button>
+                                <button class="secondary-btn" id="admin-cancel-btn" style="display: none;" onclick="resetAdminForm()">Cancel Edit</button>
+                            </div>
+                        </div>
+
+                        <!-- Catalog Manager Table -->
+                        <div class="admin-table-container glass-box">
+                            <h3>Current Database Catalog</h3>
+                            <div class="table-scroll">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Artist</th>
+                                            <th>Duration</th>
+                                            <th>Genre</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-songs-tbody">
+                                        <!-- Rows injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Persistent Music Player Bar -->
+    <footer id="player" class="player-bar glass-box hidden">
+        <!-- Song Details -->
+        <div class="player-song-details">
+            <div class="album-art" id="player-art">💿</div>
+            <div class="song-meta">
+                <h4 id="playing-title">Song Title</h4>
+                <p id="playing-artist">Artist Name</p>
+            </div>
+            <span class="genre-tag" id="playing-genre">Pop</span>
+        </div>
+
+        <!-- Player Controls -->
+        <div class="player-middle">
+            <div class="player-controls">
+                <button class="control-btn" title="Shuffle">🔀</button>
+                <button class="control-btn" title="Previous">⏮</button>
+                <button class="control-btn play-btn" id="play-pause" onclick="togglePlay()">⏸</button>
+                <button class="control-btn" title="Next">⏭</button>
+                <button class="control-btn" title="Repeat">🔁</button>
+            </div>
+            <!-- Progress Bar Slider -->
+            <div class="player-progress">
+                <span id="player-current-time">0:00</span>
+                <div class="slider-wrapper">
+                    <input type="range" id="player-seek" value="0" min="0" max="100" oninput="seekAudio(this.value)">
+                    <div class="slider-fill" id="seek-fill" style="width: 0%;"></div>
+                </div>
+                <span id="playing-duration">0:00</span>
+            </div>
+        </div>
+
+        <!-- Volume & Extras -->
+        <div class="player-right">
+            <!-- Animated Soundwave Visualizer -->
+            <div class="sound-wave" id="visualizer">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            
+            <div class="volume-control">
+                <span class="volume-icon">🔊</span>
+                <div class="slider-wrapper volume-slider">
+                    <input type="range" id="volume-slider" value="80" min="0" max="100" oninput="setVolume(this.value)">
+                    <div class="slider-fill" id="volume-fill" style="width: 80%;"></div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Playlist Song Selection Modal -->
+    <div id="playlist-modal" class="modal-overlay">
+        <div class="glass-box modal-box">
+            <div class="modal-header">
+                <h3>Add Song to Playlist</h3>
+                <button class="close-btn" onclick="closePlaylistModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Select a playlist to add <strong id="modal-song-title"></strong> to:</p>
+                <div id="modal-playlists-list" class="modal-list">
+                    <!-- Playlists injected here -->
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="player" class="player glass-box hidden">
-        <div class="player-info">
-            <h4 id="playing-title">Song Title</h4>
-            <p id="playing-artist">Artist - Album</p>
-        </div>
-        <div class="player-controls">
-            <button>⏮</button>
-            <button id="play-pause" onclick="togglePlay()">⏸</button>
-            <button>⏭</button>
-        </div>
-        <div class="player-time">
-            0:00 / <span id="playing-duration">0:00</span>
-        </div>
-    </div>
-
+    <!-- Scripts -->
     <script src="app.js"></script>
 </body>
 </html>
