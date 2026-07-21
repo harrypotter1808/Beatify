@@ -5,10 +5,28 @@ public class DatabaseManager {
     private static boolean isMysql = true;
 
     static {
-        // Check for injected environment variable
-        String envUrl = System.getenv("DATABASE_URL");
-        if (envUrl != null && !envUrl.trim().isEmpty()) {
-            dbUrl = envUrl;
+        // Check for Railway individual MySQL variables first (safest and most robust)
+        String host = System.getenv("MYSQLHOST");
+        String portEnv = System.getenv("MYSQLPORT");
+        String user = System.getenv("MYSQLUSER");
+        String password = System.getenv("MYSQLPASSWORD");
+        String database = System.getenv("MYSQLDATABASE");
+
+        if (host != null && portEnv != null && user != null && password != null && database != null) {
+            dbUrl = "jdbc:mysql://" + host + ":" + portEnv + "/" + database + "?user=" + user + "&password=" + password;
+            System.out.println("Constructed JDBC URL from Railway MySQL variables.");
+        } else {
+            // Check for general DATABASE_URL env var
+            String envUrl = System.getenv("DATABASE_URL");
+            if (envUrl != null && !envUrl.trim().isEmpty()) {
+                if (envUrl.startsWith("mysql://")) {
+                    // Convert mysql:// to jdbc:mysql:// and extract credentials if needed
+                    // Simple prepend if it's already structured, or let it fall back
+                    dbUrl = "jdbc:" + envUrl;
+                } else {
+                    dbUrl = envUrl;
+                }
+            }
         }
 
         // Attempt MySQL connection, otherwise fall back to SQLite
